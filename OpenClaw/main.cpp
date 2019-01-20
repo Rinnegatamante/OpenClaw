@@ -10,6 +10,8 @@
 
 ClawGameApp testApp;
 
+#include <vitasdk.h>
+
 #ifdef ANDROID
 extern "C" void SDL_Android_Init(JNIEnv* env, jclass cls);
 
@@ -34,10 +36,21 @@ extern "C" void Java_org_libsdl_app_SDLActivity_nativeInit( \
 #endif //ANDROID
 
 #ifdef __vita__
-int _newlib_heap_size_user = 192 * 1024 * 1024;
+int _newlib_heap_size_user = 330 * 1024 * 1024;
 #endif
 
 int main(int argc, char* argv[])
 {
-    return RunGameEngine(argc, argv);
+	// Setting maximum clocks
+	scePowerSetArmClockFrequency(444);
+	scePowerSetBusClockFrequency(222);
+	scePowerSetGpuClockFrequency(222);
+	scePowerSetGpuXbarClockFrequency(166);
+	
+	SceUID main_thread = sceKernelCreateThread("OpenClaw", RunGameEngine, 0x40, 0x800000, 0, 0, NULL);
+	if (main_thread >= 0){
+		sceKernelStartThread(main_thread, 0, NULL);
+		sceKernelWaitThreadEnd(main_thread, NULL, NULL);
+	}
+    return 0;
 }
