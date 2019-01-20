@@ -11,6 +11,7 @@
 
 #include "libwap.h"
 #include <iostream>
+#include <vitasdk.h>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ struct RezArchiveFileEntry
 {
     RezArchive* rezArchive;
     std::ifstream* fileStream;
-    std::mutex mutex;
+    SceUID mutex = -1;
 };
 
 /*************************************************************************/
@@ -136,12 +137,14 @@ char* WAP_GetRezFileData(RezFile* rezFile)
         g_rezFileDataMap.insert(std::pair<RezFile*, char*>(rezFile, new char[rezFile->size]));
 
         RezArchiveFileEntry* rezArchiveFileEntry = g_rezArchiveFileEntryMap[rezFile->owner];
-
-        std::lock_guard<std::mutex> lock(rezArchiveFileEntry->mutex);
+		
+		//sceKernelLockMutex(rezArchiveFileEntry->mutex, 1, nullptr);
 
         // Seek to file's offset within REZ file and load it
         rezArchiveFileEntry->fileStream->seekg(rezFile->offset, std::ios::beg);
         rezArchiveFileEntry->fileStream->read(g_rezFileDataMap[rezFile], rezFile->size);
+		
+		//sceKernelUnlockMutex(re<ArchiveFileEntry->mutex, 1);
     }
 
     return g_rezFileDataMap[rezFile];
@@ -268,7 +271,7 @@ RezDirectory* WAP_GetRezDirectoryFromRezDirectory(RezDirectory* rezDirectory, co
 
 RezFile* WAP_GetRezFileFromRezArchive(RezArchive* rezArchive, const char* rezFilePath)
 {
-    static std::mutex mutex;
+    //static std::mutex mutex;
 
     // Check if we got valid input
     if ((rezArchive == NULL) || (rezArchive->rootDirectory == NULL) ||
